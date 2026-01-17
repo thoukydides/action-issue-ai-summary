@@ -1,9 +1,9 @@
 // GitHub action
 // Copyright © 2026 Alexander Thoukydides
 
-import { Issue } from './get_issue';
+import { Issue } from './get_issue.js';
 import * as core from '@actions/core';
-import { plural } from './utils';
+import { plural } from './utils.js';
 
 // Match ANSI colour codes (including textual representation of escape code)
 // eslint-disable-next-line no-control-regex

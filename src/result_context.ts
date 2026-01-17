@@ -1,7 +1,7 @@
 // GitHub action
 // Copyright © 2026 Alexander Thoukydides
 
-import { Issue, Role } from './get_issue';
+import { Issue, Role } from './get_issue.js';
 
 // A simplified representation of an issue body or comment
 export interface ResultComment {

@@ -2,10 +2,10 @@
 // Copyright © 2026 Alexander Thoukydides
 
 import * as core from '@actions/core';
-import { Issue } from './get_issue';
-import { getResultChars } from './result_context';
-import { truncateCodeBlocks, truncateLogsFull, truncateLogsPartial, truncateText } from './truncate_text';
-import { plural } from './utils';
+import { Issue } from './get_issue.js';
+import { getResultChars } from './result_context.js';
+import { truncateCodeBlocks, truncateLogsFull, truncateLogsPartial, truncateText } from './truncate_text.js';
+import { plural } from './utils.js';
 
 // Proportion of context to allocate to the issue body when truncation required
 const ISSUE_BODY_FRACTION = 0.25; // 25% body + 75% comments

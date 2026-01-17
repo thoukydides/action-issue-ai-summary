@@ -13,7 +13,7 @@ export default defineConfig(
     ...tseslint.configs.strictTypeChecked,
     ...tseslint.configs.stylisticTypeChecked,
     {
-        files: ['**/*.ts', 'eslint.config.mjs'],
+        files: ['**/*.ts', 'eslint.config.mjs', 'rollup.config.ts'],
         languageOptions: {
             globals:        globals.node,
             ecmaVersion:    'latest',

@@ -1,12 +1,12 @@
 // GitHub action
 // Copyright © 2026 Alexander Thoukydides
 
-import { GitHub } from '@actions/github/lib/utils';
+import { GitHub } from '@actions/github/lib/utils.js';
 import * as core from '@actions/core';
-import { getIssue } from './get_issue';
-import { cleanIssue } from './clean_issue';
-import { makeResult, Result } from './result_context';
-import { truncateIssue } from './truncate_issue';
+import { getIssue } from './get_issue.js';
+import { cleanIssue } from './clean_issue.js';
+import { makeResult, Result } from './result_context.js';
+import { truncateIssue } from './truncate_issue.js';
 
 // GPT tokeniser: 1 token ≈ 4 prose characters or 3-3.5 for code/logs
 const CHARS_PER_TOKEN = 3; // (assume worst case when truncating to fit)

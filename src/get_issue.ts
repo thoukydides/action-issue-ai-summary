@@ -2,11 +2,11 @@
 // Copyright © 2026 Alexander Thoukydides
 
 import { context } from '@actions/github';
-import { GitHub } from '@actions/github/lib/utils';
+import { GitHub } from '@actions/github/lib/utils.js';
 import { components } from '@octokit/openapi-types';
-import { RestEndpointMethodTypes } from '@octokit/plugin-rest-endpoint-methods/dist-types/generated/parameters-and-response-types';
+import { RestEndpointMethodTypes } from '@octokit/plugin-rest-endpoint-methods/dist-types/generated/parameters-and-response-types.js';
 import * as core from '@actions/core';
-import { plural } from './utils';
+import { plural } from './utils.js';
 
 // GitHub REST API types
 type AuthorAssociation  = components['schemas']['author-association'];

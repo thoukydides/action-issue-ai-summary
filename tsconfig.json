@@ -2,10 +2,30 @@
 	"extends": "@tsconfig/node20/tsconfig.json",
     "compilerOptions": {
         "allowJs": true,
+        "allowSyntheticDefaultImports": true,
         "checkJs": true,
-        "noEmit": true
+        "declaration": false,
+        "declarationMap": false,
+        "forceConsistentCasingInFileNames": true,
+        "isolatedModules": true,
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "noImplicitAny": true,
+		"noUncheckedIndexedAccess": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": false,
+        "outDir": "./dist",
+        "pretty": true,
+        "resolveJsonModule": true,
+        "strictNullChecks": true
     },
+    "exclude": [
+        "dist",
+        "node_modules"
+    ],
     "include": [
-        "eslint.config.mjs"
+        "src",
+        "eslint.config.mjs",
+        "rollup.config.ts"
     ]
 }
