@@ -8,6 +8,8 @@
     ],
     "eslint.enable": true,
     "cSpell.words": [
+        "aeiou",
+        "buymeacoffee",
         "color",
         "dosubot",
         "Homebridge",
@@ -17,7 +19,8 @@
         "MQTT",
         "scannable",
         "Segmenter",
-        "Thoukydides"
+        "Thoukydides",
+        "vars"
     ],
     "files.exclude": {
         "node_modules/": true

@@ -1,0 +1,12 @@
+{
+    "extends": "@tsconfig/node20/tsconfig.json",
+    "compilerOptions": {
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "inlineSourceMap": true,
+        "inlineSources": true,
+        "outDir": "../dist",
+        "resolveJsonModule": true,
+		"noUncheckedIndexedAccess": true
+    }
+}
