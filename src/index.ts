@@ -14,6 +14,7 @@ const CHARS_PER_TOKEN = 3; // (assume worst case when truncating to fit)
 // Script entry point
 export default async function run(github: InstanceType<typeof GitHub>): Promise<Result> {
     // Action inputs
+    console.log(JSON.stringify(process.env, null, 4));
     const issue_number          = Number(core.getInput('issue_number',          { required: true }));
     const input_tokens          = Number(core.getInput('input_tokens',          { required: true }));
     const input_prompt_tokens   = Number(core.getInput('input_prompt_tokens',   { required: true }));
