@@ -51,5 +51,5 @@ jobs:
         else
           git commit -m "Update dist folder from build [skip ci]"
           git push
-          echo "::notice title=Build updated::Changes to 'dist' directory committed and pushed"
+          echo "::warning title=Build updated::Changes to 'dist' directory committed and pushed"
         fi
