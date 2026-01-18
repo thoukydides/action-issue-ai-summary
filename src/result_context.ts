@@ -35,7 +35,7 @@ export function makeResult(issue: Issue, omitted_comments?: number): Result {
         const { created_at, url, ...restComment } = comment;
         const this_time = new Date(created_at).getTime();
         const days_gap = daysBetween(prev_time, this_time);
-        if (0 < days_gap) result.comments.push({ days_gap, omitted_comments });
+        if (days_gap || omitted_comments) result.comments.push({ days_gap, omitted_comments });
         result.comments.push(restComment);
         prev_time = this_time;
         omitted_comments = undefined;
