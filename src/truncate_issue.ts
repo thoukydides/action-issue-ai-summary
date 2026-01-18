@@ -4,7 +4,7 @@
 import * as core from '@actions/core';
 import { Issue } from './get_issue.js';
 import { getResultChars } from './result_context.js';
-import { truncateCodeBlocks, truncateLogsFull, truncateLogsPartial, truncateText } from './truncate_text.js';
+import { truncateCodeBlocks, truncateLogsFull, truncateLogsPartial, truncateText, truncateURLs } from './truncate_text.js';
 import { plural } from './utils.js';
 
 // Proportion of context to allocate to the issue body when truncation required
@@ -40,9 +40,10 @@ export function truncateIssue(issue: Issue, maxChars: number): [Issue, number] {
         issue = applyTruncations(issue, 'body',    bodySizeMet,  mapIssueBody,     opName, op, keepOnFail);
         return issue;
     };
-    issue = truncateAll(issue, 'partial logs', truncateLogsPartial, false);
-    issue = truncateAll(issue, 'full logs',    truncateLogsFull);
-    issue = truncateAll(issue, 'code blocks',  truncateCodeBlocks);
+    issue = truncateAll(issue, 'partial logs',  truncateLogsPartial, false);
+    issue = truncateAll(issue, 'full logs',     truncateLogsFull);
+    issue = truncateAll(issue, 'code blocks',   truncateCodeBlocks);
+    issue = truncateAll(issue, 'links',         truncateURLs);
     logProgress('Stripped logs');
 
     // Truncate the issue body text if still too large

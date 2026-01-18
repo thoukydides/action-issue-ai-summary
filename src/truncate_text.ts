@@ -24,6 +24,14 @@ const CODE_PATTERNS = [
     /(?:^|\n\n)(?:(?: {4}|\t).*\n)(?:(?: {4}|\t).*\n|\s*\n)*(?=\n|$)/g
 ];
 
+// Patterns that match URLs
+const URL_PATTERNS = [
+    // Markdown link
+    /(?<=\]\()\w[\w+-]*:\S*?(?<!\\)(?=\))/g,
+    // Bare URL
+    /https?:\/\/[^\s"<>|()[\]{}]+/g
+];
+
 // Truncate any large blocks that resemble logs
 export function truncateLogsPartial(text: string): string {
     for (const re of LOG_PATTERNS) {
@@ -52,6 +60,14 @@ export function truncateLogsFull(text: string): string {
 // Fully remove any Markdown code blocks
 export function truncateCodeBlocks(text: string): string {
     for (const re of CODE_PATTERNS) {
+        text = text.replaceAll(re, truncateIfShorter);
+    }
+    return text;
+}
+
+// Remove any long URLs
+export function truncateURLs(text: string): string {
+    for (const re of URL_PATTERNS) {
         text = text.replaceAll(re, truncateIfShorter);
     }
     return text;
@@ -102,5 +118,6 @@ export function truncateText(text: string, maxChars: number): string {
 
 // Replace a matched string with the truncation marker, but only if shorter
 function truncateIfShorter(match: string): string {
-    return TRUNCATION_MARKER.length < match.length ? TRUNCATION_MARKER : match;
+    const truncationMarker = match.includes('\n') ? TRUNCATION_MARKER : TRUNCATION_MARKER.trim();
+    return truncationMarker.length < match.length ? truncationMarker : match;
 }
