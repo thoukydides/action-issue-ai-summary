@@ -6,7 +6,7 @@ import * as core from '@actions/core';
 import { plural } from './utils.js';
 
 // Match line endings (allowing CRLF, CR, or LF)
-const LINE_ENDING = /\r\n|(?<!\r)\n|\r(?!\n)/;
+const LINE_ENDING = /\r\n|(?<!\r)\n|\r(?!\n)/g;
 
 // Match ANSI colour codes (including textual representation of escape code)
 // eslint-disable-next-line no-control-regex
