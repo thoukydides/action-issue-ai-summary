@@ -31796,7 +31796,7 @@ function truncateIssue(issue, maxChars) {
         const chars = getResultChars(issue);
         const deltaPercent = 100 * (chars - maxChars) / maxChars;
         const underOver = 0 < deltaPercent ? 'over' : 'under';
-        coreExports.info(`Progress [${description}]: ${plural(chars, 'character')} ${underOver} budget [${deltaPercent.toFixed(1)}%]`
+        coreExports.info(`Progress [${description}]: ${plural(chars, 'character')} ${Math.abs(deltaPercent).toFixed(1)}% ${underOver} budget`
             + ` (${plural(issue.body.length, 'body character')} + ${plural(issue.comments.length, 'comment')})`);
     }
     logProgress('Initial');
