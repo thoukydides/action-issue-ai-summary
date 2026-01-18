@@ -35,6 +35,8 @@ jobs:
       run: npm run build
     
     - name: Commit dist changes
+      env:
+        HUSKY: 0
       run: |
         if [ ! -d dist ]; then
           echo "::error title=Build failed::'dist' directory missing"

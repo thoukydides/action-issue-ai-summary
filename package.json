@@ -58,6 +58,7 @@
         "@types/node": "^20.19.29",
         "eslint": "^9.39.2",
         "globals": "^17.0.0",
+        "husky": "^9.1.7",
         "rimraf": "^6.1.2",
         "rollup": "^4.55.1",
         "tslib": "^2.8.1",
@@ -68,6 +69,7 @@
         "build": "npm run clean && npm run lint && npm run rollup",
         "clean": "rimraf ./dist",
         "rollup": "rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript",
-        "lint": "eslint eslint.config.mjs 'src/**/*.ts' --max-warnings=0"
+        "lint": "eslint eslint.config.mjs 'src/**/*.ts' --max-warnings=0",
+        "prepare": "husky"
     }
 }
