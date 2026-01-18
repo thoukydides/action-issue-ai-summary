@@ -31608,7 +31608,7 @@ function authorAssociationToRole(comment) {
 // GitHub action
 // Copyright © 2026 Alexander Thoukydides
 // Match line endings (allowing CRLF, CR, or LF)
-const LINE_ENDING = /\r\n|(?<!\r)\n|\r(?!\n)/;
+const LINE_ENDING = /\r\n|(?<!\r)\n|\r(?!\n)/g;
 // Match ANSI colour codes (including textual representation of escape code)
 // eslint-disable-next-line no-control-regex
 const ANSI_ESCAPE = /(?:\x1B|ESC)\[[0-9;]*[msuK]/g;
