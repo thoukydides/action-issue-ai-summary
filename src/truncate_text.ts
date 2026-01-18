@@ -9,7 +9,7 @@ const LOG_PATTERNS = [
     // Matterbridge format logs
     /^(?:\w* ?\[\d\d:\d\d:\d\d\.\d\d\d\] ?\[.*\n)+/gm,
     // Homebridge format logs
-    /(?:^\[\d\d?[-/.]\d\d?[-/.]\d\d\d\d, \d\d?:\d\d:\d\d(?: \w+)?\] .*\n)+/gm,
+    /(?:^(?:\[[^\]]+\] )?\[\d\d?[-/.]\d\d?[-/.]\d\d\d\d, \d\d?:\d\d:\d\d(?: \w+)?\] .*\n)+/gm,
     // Repeated date stamps at the start of lines
     /(?:^\[?\d\d\d\d[-/.]\d\d?[-/.]\d\d?\D.*\n){5,}/gm,
     /(?:^\[?\d\d?[-/.]\d\d?[-/.]\d\d\d\d\D.*\n){5,}/gm
