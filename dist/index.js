@@ -31585,6 +31585,11 @@ function simplifyIssueComment(comment) {
 }
 // Identify an author's role
 function authorAssociationToRole(comment) {
+    const TYPE_TO_ROLE = {
+        Bot: 'Bot',
+        Organization: 'Unknown',
+        User: undefined
+    };
     const ASSOCIATION_TO_ROLE = {
         OWNER: 'Maintainer',
         MEMBER: 'Maintainer',
@@ -31593,15 +31598,17 @@ function authorAssociationToRole(comment) {
         FIRST_TIMER: 'User',
         FIRST_TIME_CONTRIBUTOR: 'User',
         MANNEQUIN: 'User',
-        NONE: 'Unknown'
+        NONE: 'User'
     };
-    if (comment.user?.type === 'Bot')
-        return 'Bot';
-    return ASSOCIATION_TO_ROLE[comment.author_association] ?? 'Unknown';
+    return TYPE_TO_ROLE[comment.user?.type ?? '']
+        ?? ASSOCIATION_TO_ROLE[comment.author_association]
+        ?? 'Unknown';
 }
 
 // GitHub action
 // Copyright © 2026 Alexander Thoukydides
+// Match line endings (allowing CRLF, CR, or LF)
+const LINE_ENDING = /\r\n|(?<!\r)\n|\r(?!\n)/;
 // Match ANSI colour codes (including textual representation of escape code)
 // eslint-disable-next-line no-control-regex
 const ANSI_ESCAPE = /(?:\x1B|ESC)\[[0-9;]*[msuK]/g;
@@ -31613,12 +31620,17 @@ function cleanIssue(issue) {
     const botCount = rawComments.length - humanComments.length;
     if (0 < botCount)
         coreExports.info(`Excluded ${plural(botCount, 'comment')} by bots`);
-    // Remove anything resembling ANSI codes from the body and comments
-    const stripAnsiCodes = (text) => text.replaceAll(ANSI_ESCAPE, '');
-    const body = stripAnsiCodes(rawBody);
-    const comments = humanComments.map(({ body, ...rest }) => ({ body: stripAnsiCodes(body), ...rest }));
+    // Normalise line endings and remove ANSI codes from the body and comments
+    const body = cleanBody(rawBody);
+    const comments = humanComments.map(({ body, ...rest }) => ({ body: cleanBody(body), ...rest }));
     // Return the cleaned result
     return { body, comments, ...restIssue };
+}
+// Clean an issue or comment body
+function cleanBody(text) {
+    return text
+        .replaceAll(LINE_ENDING, '\n')
+        .replaceAll(ANSI_ESCAPE, '');
 }
 
 // GitHub action
@@ -31634,7 +31646,7 @@ function makeResult(issue, omitted_comments) {
         const { created_at, url, ...restComment } = comment;
         const this_time = new Date(created_at).getTime();
         const days_gap = daysBetween(prev_time, this_time);
-        if (0 < days_gap)
+        if (days_gap || omitted_comments)
             result.comments.push({ days_gap, omitted_comments });
         result.comments.push(restComment);
         prev_time = this_time;
@@ -31665,7 +31677,7 @@ const LOG_PATTERNS = [
     // Matterbridge format logs
     /^(?:\w* ?\[\d\d:\d\d:\d\d\.\d\d\d\] ?\[.*\n)+/gm,
     // Homebridge format logs
-    /(?:^\[\d\d?[-/.]\d\d?[-/.]\d\d\d\d, \d\d?:\d\d:\d\d(?: \w+)?\] .*\n)+/gm,
+    /(?:^(?:\[[^\]]+\] )?\[\d\d?[-/.]\d\d?[-/.]\d\d\d\d, \d\d?:\d\d:\d\d(?: \w+)?\] .*\n)+/gm,
     // Repeated date stamps at the start of lines
     /(?:^\[?\d\d\d\d[-/.]\d\d?[-/.]\d\d?\D.*\n){5,}/gm,
     /(?:^\[?\d\d?[-/.]\d\d?[-/.]\d\d\d\d\D.*\n){5,}/gm
@@ -31677,6 +31689,13 @@ const CODE_PATTERNS = [
     /^~~~\S*\n[\s\S]*?\n~~~/gm,
     // Indented code blocks (at least 4 spaces or 1 tab)
     /(?:^|\n\n)(?:(?: {4}|\t).*\n)(?:(?: {4}|\t).*\n|\s*\n)*(?=\n|$)/g
+];
+// Patterns that match URLs
+const URL_PATTERNS = [
+    // Markdown link
+    /(?<=\]\()\w[\w+-]*:\S*?(?<!\\)(?=\))/g,
+    // Bare URL
+    /https?:\/\/[^\s"<>|()[\]{}]+/g
 ];
 // Truncate any large blocks that resemble logs
 function truncateLogsPartial(text) {
@@ -31704,6 +31723,13 @@ function truncateLogsFull(text) {
 // Fully remove any Markdown code blocks
 function truncateCodeBlocks(text) {
     for (const re of CODE_PATTERNS) {
+        text = text.replaceAll(re, truncateIfShorter);
+    }
+    return text;
+}
+// Remove any long URLs
+function truncateURLs(text) {
+    for (const re of URL_PATTERNS) {
         text = text.replaceAll(re, truncateIfShorter);
     }
     return text;
@@ -31752,7 +31778,8 @@ function truncateText(text, maxChars) {
 }
 // Replace a matched string with the truncation marker, but only if shorter
 function truncateIfShorter(match) {
-    return TRUNCATION_MARKER.length < match.length ? TRUNCATION_MARKER : match;
+    const truncationMarker = match.includes('\n') ? TRUNCATION_MARKER : TRUNCATION_MARKER.trim();
+    return truncationMarker.length < match.length ? truncationMarker : match;
 }
 
 // GitHub action
@@ -31786,6 +31813,7 @@ function truncateIssue(issue, maxChars) {
     issue = truncateAll(issue, 'partial logs', truncateLogsPartial, false);
     issue = truncateAll(issue, 'full logs', truncateLogsFull);
     issue = truncateAll(issue, 'code blocks', truncateCodeBlocks);
+    issue = truncateAll(issue, 'links', truncateURLs);
     logProgress('Stripped logs');
     // Truncate the issue body text if still too large
     const commentChars = getResultChars(mapIssueBody(issue, () => ''));
