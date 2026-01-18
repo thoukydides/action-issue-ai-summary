@@ -70,6 +70,11 @@ function simplifyIssueComment(comment: RestIssue | RestComment): Comment {
 
 // Identify an author's role
 function authorAssociationToRole(comment: RestIssue | RestComment): Role {
+    const TYPE_TO_ROLE: Record<string, Role | undefined> = {
+        Bot:                    'Bot',
+        Organization:           'Unknown',
+        User:                   undefined
+    };
     const ASSOCIATION_TO_ROLE: Record<string, Role> = {
         OWNER:                  'Maintainer',
         MEMBER:                 'Maintainer',
@@ -78,8 +83,9 @@ function authorAssociationToRole(comment: RestIssue | RestComment): Role {
         FIRST_TIMER:            'User',
         FIRST_TIME_CONTRIBUTOR: 'User',
         MANNEQUIN:              'User',
-        NONE:                   'Unknown'
+        NONE:                   'User'
     } satisfies Record<AuthorAssociation, Role>;
-    if (comment.user?.type === 'Bot') return 'Bot';
-    return ASSOCIATION_TO_ROLE[comment.author_association] ?? 'Unknown';
+    return TYPE_TO_ROLE[comment.user?.type ?? '']
+        ?? ASSOCIATION_TO_ROLE[comment.author_association]
+        ?? 'Unknown';
 }
