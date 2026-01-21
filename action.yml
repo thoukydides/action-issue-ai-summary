@@ -13,6 +13,10 @@ inputs:
   prompt_file:
     description: Path to a custom .prompt.yml file containing the AI prompt template
     type: string
+  prompt_vars:
+    description: Additional template variables in YAML format to substitute into the AI prompt
+    type: string
+    default: ''
   input_tokens:
     description: The maximum number of input tokens that the AI model will accept (used to guide truncation of the issue body and comments to fit the available context)
     type: number
@@ -96,3 +100,4 @@ runs:
           release:    ${{ steps.release.outputs.result }}
           context: |
             ${{ steps.context.outputs.result }}
+          ${{ inputs.prompt_vars }}
