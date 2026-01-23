@@ -90,7 +90,8 @@ runs:
 
     - name: AI inference
       id: ai
-      uses: actions/ai-inference@v1
+      #uses: actions/ai-inference@v1
+      uses: dabroz/ai-inference-debug@8653f60cf603ef734f69fcf38308068faadf6497
       with:
         prompt-file: ${{ steps.resolve.outputs.path }}
         max-tokens: ${{ toJSON(inputs.output_tokens) }}
