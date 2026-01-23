@@ -134,28 +134,32 @@ responseFormat: json_schema
 
 jsonSchema: |-
   {
-    "title": "IssueSummary",
-    "type": "object",
-    "properties": {
-      "status": {
-        "enum": ['resolved', 'waiting for feedback', 'under review', 'invalid'],
-        "description": "The current issue status"
+    "name": "issue",
+    "strict": true,
+    "schema": {
+      "title": "IssueSummary",
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": ['resolved', 'waiting for feedback', 'under review', 'invalid'],
+          "description": "The current issue status"
+        },
+        "blocker": {
+          "type": "string",
+          "description": "A brief description of the current technical blocker(s)"
+        },
+        "next_steps": {
+          "type": "string",
+          "description": "Required next steps to progress the issue"
+        },
+        "confidence": {
+          "enum": ['high', 'medium', 'low'],
+          "description": "Confidence level of the issue analysis "
+        }
       },
-      "blocker": {
-        "type": "string",
-        "description": "A brief description of the current technical blocker(s)"
-      },
-      "next_steps": {
-        "type": "string",
-        "description": "Required next steps to progress the issue"
-      },
-      "confidence": {
-        "enum": ['high', 'medium', 'low'],
-        "description": "Confidence level of the issue analysis "
-      }
-    },
-    "additionalProperties": false,
-    "required": ["status", "blocker", "next_steps", "confidence"]
+      "additionalProperties": false,
+      "required": ["status", "blocker", "next_steps", "confidence"]
+    }
   }
 ```
 
