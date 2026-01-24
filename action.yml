@@ -94,7 +94,7 @@ runs:
       uses: thoukydides/ai-inference-debug@main
       with:
         prompt-file: ${{ steps.resolve.outputs.path }}
-        max-tokens: ${{ toJSON(inputs.output_tokens) }}
+        max-tokens: ${{ inputs.output_tokens }}
         input: | # yaml
           owner:      ${{ github.repository_owner }}
           user:       ${{ steps.context.outputs.issue_user }}
