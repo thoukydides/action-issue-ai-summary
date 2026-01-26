@@ -7,6 +7,8 @@ import { getIssue } from './get_issue.js';
 import { cleanIssue } from './clean_issue.js';
 import { makeResult, Result } from './result_context.js';
 import { truncateIssue } from './truncate_issue.js';
+import { jsonTokens } from './tokens.js';
+import { plural } from './utils.js';
 
 // GPT tokeniser: 1 token ≈ 4 prose characters or 3-3.5 for code/logs
 const CHARS_PER_TOKEN = 3; // (assume worst case when truncating to fit)
@@ -31,6 +33,10 @@ export default async function run(github: InstanceType<typeof GitHub>): Promise<
 
     // Truncate the issue to fit within the available input context
     const [truncatedIssue, omittedComments] = truncateIssue(cleanedIssue, maxIssueChars);
+
+    // Try calculating the actual token count
+    const finalTokens = jsonTokens(makeResult(truncatedIssue, omittedComments));
+    core.info(`Final size ${plural(finalTokens, 'token')}`);
 
     // Provide useful fields as discrete outputs and return the context
     core.setOutput('issue_title', restIssue.title);

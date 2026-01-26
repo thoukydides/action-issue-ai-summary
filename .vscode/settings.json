@@ -17,9 +17,11 @@
         "Math",
         "Matterbridge",
         "MQTT",
+        "onwarn",
         "scannable",
         "Segmenter",
         "Thoukydides",
+        "tiktoken",
         "vars"
     ],
     "files.exclude": {
