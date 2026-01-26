@@ -32237,7 +32237,7 @@ function fitByOmittingComments(result, maxTokens) {
     // The parameter is the number of comments to keep
     const maker = (param) => {
         const comments = issue.comments.slice(-param);
-        const context = { issue: { ...issue, comments }, omitted_comments: omitted_comments + param };
+        const context = { issue: { ...issue, comments }, omitted_comments: omitted_comments + maxComments - param };
         return { value: makeResult(context), context };
     };
     // Select the parameter value that best fits the token budget
