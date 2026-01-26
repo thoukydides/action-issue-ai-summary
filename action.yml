@@ -78,23 +78,13 @@ runs:
               return 'latest release';
           }
 
-    - name: Resolve prompt path
-      id: resolve
-      shell: bash
-      run: | # shell
-        if [ -z "${{ inputs.prompt_file }}" ]; then
-          echo "path=${{ github.action_path }}/default.prompt.yml" >> $GITHUB_OUTPUT
-        else
-          echo "path=${{ inputs.prompt_file }}" >> $GITHUB_OUTPUT
-        fi
-
     - name: AI inference
       id: ai
       #uses: actions/ai-inference@v1
       uses: thoukydides/ai-inference-debug@main
       with:
-        prompt-file: ${{ steps.resolve.outputs.path }}
-        max-tokens: ${{ inputs.output_tokens }}
+        prompt-file:  ${{ inputs.prompt_file || format('{0}/default.prompt.yml', github.action_path) }}
+        max-tokens:   ${{ inputs.output_tokens }}
         input: | # yaml
           owner:      ${{ github.repository_owner }}
           user:       ${{ steps.context.outputs.issue_user }}

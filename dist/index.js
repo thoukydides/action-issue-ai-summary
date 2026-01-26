@@ -31636,11 +31636,12 @@ function cleanBody(text) {
 // GitHub action
 // Copyright © 2026 Alexander Thoukydides
 // Convert an issue and its comments into a result context
-function makeResult(issue, omitted_comments) {
+function makeResult(context) {
     // Convert the issue body
-    const { number, created_at, url, comments, ...restIssue } = issue;
+    const { number, created_at, url, comments, ...restIssue } = context.issue;
     const result = { ...restIssue, comments: [] };
     // Convert the comments, inserting time gap markers as required
+    let omitted_comments = context.omitted_comments;
     let prev_time = new Date(created_at).getTime();
     for (const comment of comments) {
         const { created_at, url, ...restComment } = comment;
@@ -31656,11 +31657,6 @@ function makeResult(issue, omitted_comments) {
     const days_stale = daysBetween(prev_time, Date.now());
     result.comments.push({ days_stale }); // (always include, even if 0)
     return result;
-}
-// The size of the result context
-function getResultChars(issue, omitted_comments) {
-    const result = makeResult(issue, omitted_comments);
-    return JSON.stringify(result).length;
 }
 // Elapsed days between two millisecond times
 function daysBetween(ms1, ms2) {
@@ -31780,112 +31776,6 @@ function truncateText(text, maxChars) {
 function truncateIfShorter(match) {
     const truncationMarker = match.includes('\n') ? TRUNCATION_MARKER : TRUNCATION_MARKER.trim();
     return truncationMarker.length < match.length ? truncationMarker : match;
-}
-
-// GitHub action
-// Copyright © 2026 Alexander Thoukydides
-// Proportion of context to allocate to the issue body when truncation required
-const ISSUE_BODY_FRACTION = 0.25; // 25% body + 75% comments
-// Number of priority comments
-const MIN_PRIORITY_COMMENTS = 3;
-const MAX_PRIORITY_COMMENTS = 10;
-// Truncate the issue to fit within the available input context
-function truncateIssue(issue, maxChars) {
-    // Log progress with fitting the issue into the available context
-    function logProgress(description) {
-        const chars = getResultChars(issue);
-        const deltaPercent = 100 * (chars - maxChars) / maxChars;
-        const underOver = 0 < deltaPercent ? 'over' : 'under';
-        coreExports.info(`Progress [${description}]: ${plural(chars, 'character')} ${Math.abs(deltaPercent).toFixed(1)}% ${underOver} budget`
-            + ` (${plural(issue.body.length, 'body character')} + ${plural(issue.comments.length, 'comment')})`);
-    }
-    logProgress('Initial');
-    // Check whether the size target has been achieved
-    const minBodyChars = Math.round(maxChars * ISSUE_BODY_FRACTION);
-    const issueSizeMet = (issue) => getResultChars(issue) <= maxChars;
-    const bodySizeMet = (issue) => issueSizeMet(issue) || issue.body.length < minBodyChars;
-    // Attempt to fit issue body and comments by removing logs and code blocks
-    const truncateAll = (issue, opName, op, keepOnFail) => {
-        issue = applyTruncations(issue, 'comment', issueSizeMet, mapIssueComments, opName, op, keepOnFail);
-        issue = applyTruncations(issue, 'body', bodySizeMet, mapIssueBody, opName, op, keepOnFail);
-        return issue;
-    };
-    issue = truncateAll(issue, 'partial logs', truncateLogsPartial, false);
-    issue = truncateAll(issue, 'full logs', truncateLogsFull);
-    issue = truncateAll(issue, 'code blocks', truncateCodeBlocks);
-    issue = truncateAll(issue, 'links', truncateURLs);
-    logProgress('Stripped logs');
-    // Truncate the issue body text if still too large
-    const commentChars = getResultChars(mapIssueBody(issue, () => ''));
-    const maxBodyChars = Math.max(maxChars - commentChars, minBodyChars);
-    issue = applyTruncations(issue, 'body', bodySizeMet, mapIssueBody, 'text', body => truncateText(body, maxBodyChars));
-    logProgress('Truncated body');
-    // Select the comments to squeeze into the context
-    const totalComments = issue.comments.length;
-    const minComments = getMinComments(issue);
-    while (minComments < issue.comments.length && !issueSizeMet(issue))
-        issue.comments.shift();
-    const omittedComments = totalComments - issue.comments.length;
-    coreExports.info(`Selected ${issue.comments.length} of ${plural(totalComments, 'comment')}`);
-    if (omittedComments)
-        coreExports.warning(`Discarded ${plural(omittedComments, 'oldest comment')} to fit context`);
-    logProgress('Selected comments');
-    // Truncate comment bodies as necessary to fit within the context
-    let availableCommentChars = maxChars - getResultChars(mapIssueComments(issue, () => ''));
-    issue = mapIssueComments(issue, (body, index) => {
-        // Available context for this comment, if equal limit applied
-        const tail = issue.comments.length - index;
-        const equalMaxChars = Math.floor(availableCommentChars / tail);
-        const tailChars = issue.comments.slice(index + 1).reduce((acc, c) => acc + Math.min(c.body.length, equalMaxChars), 0);
-        const maxCommentChars = availableCommentChars - tailChars;
-        // Truncate this comment to the selected size
-        body = truncateText(body, maxCommentChars);
-        availableCommentChars -= body.length;
-        return body;
-    });
-    logProgress('Truncated comments');
-    // Return the truncated issue
-    return [issue, omittedComments];
-}
-// Determine the number of tail comments that must be included
-function getMinComments(issue) {
-    const { comments } = issue;
-    // Identify last block of comments by a project maintainer
-    const lastMaintainerIndex = comments.findLastIndex(c => c.role === 'Maintainer');
-    const firstMaintainerIndex = comments.slice(0, lastMaintainerIndex).findLastIndex(c => c.role !== 'Maintainer') + 1;
-    const maintainerCommentTail = lastMaintainerIndex !== -1 ? comments.length - firstMaintainerIndex : 0;
-    // Choose the number of comments to squeeze into the context (include one non-maintainer comment)
-    return Math.min(Math.max(maintainerCommentTail + 1, MIN_PRIORITY_COMMENTS), comments.length, MAX_PRIORITY_COMMENTS);
-}
-// Map a function over issue or comment bodies
-function mapIssueBody(issue, op) {
-    return { ...issue, body: op(issue.body, 0) };
-}
-function mapIssueComments(issue, op) {
-    return { ...issue, comments: issue.comments.map((c, i) => ({ ...c, body: op(c.body, i) })) };
-}
-// Apply successive truncations until the result is small enough
-function applyTruncations(issue, type, isDone, mapper, opName, op, keepOnFail = true) {
-    const state = { done: false, applied: 0, truncated: 0 };
-    const isDoneLatching = () => state.done ||= isDone(issue);
-    // Iterate over the items to truncate
-    const resultIssue = mapper(issue, (text, index) => {
-        if (isDoneLatching())
-            return text;
-        const opText = op(text, index);
-        ++state.applied;
-        if (opText !== text)
-            ++state.truncated;
-        return opText;
-    });
-    // Decide whether to keep the result
-    const keepResult = keepOnFail || isDoneLatching();
-    // Log a summary of the actions performed, if any
-    if (state.applied) {
-        const action = keepResult ? 'Truncated' : 'Discarded';
-        coreExports.info(`${action} ${opName} ${state.truncated} of ${plural(state.applied, type)}`);
-    }
-    return keepResult ? resultIssue : issue;
 }
 
 var base64Js = {};
@@ -32218,11 +32108,184 @@ function jsonTokens(value) {
     const jsonString = JSON.stringify(value);
     return textTokens(jsonString);
 }
+// Find the largest integral parameter that fits within a token count limit
+// (might not be optimal if size changes non-monotonically)
+function fitTokens(maker, maxTokens, minParam, maxParam) {
+    // Perform a binary search to find the largest parameter that fits
+    while (minParam < maxParam) {
+        const testParam = Math.ceil((minParam + maxParam) / 2);
+        const { done } = getTokensResult(maker, maxTokens, testParam);
+        if (done)
+            minParam = testParam;
+        else
+            maxParam = testParam - 1;
+    }
+    // Return the best fit
+    return getTokensResult(maker, maxTokens, maxParam);
+}
+// Apply a maker method and assess the resulting token count
+function getTokensResult(maker, maxTokens, param = 0) {
+    const { value, context } = maker(param);
+    const tokens = jsonTokens(value);
+    const done = tokens <= maxTokens;
+    return { param, value, context, tokens, done };
+}
 
 // GitHub action
 // Copyright © 2026 Alexander Thoukydides
-// GPT tokeniser: 1 token ≈ 4 prose characters or 3-3.5 for code/logs
-const CHARS_PER_TOKEN = 3; // (assume worst case when truncating to fit)
+// Proportion of context to allocate to the issue body when truncation required
+const ISSUE_BODY_FRACTION = 0.25; // 25% body + 75% comments
+// Number of priority comments
+const MIN_PRIORITY_COMMENTS = 3;
+const MAX_PRIORITY_COMMENTS = 10;
+// Truncate the issue to fit within the available input context
+function truncateIssue(issue, maxTokens) {
+    let result = getIssueResult({ issue, omitted_comments: 0 }, maxTokens);
+    // Log progress with fitting the issue into the available context
+    function logProgress(description) {
+        const { tokens } = result;
+        const deltaPercent = 100 * (tokens - maxTokens) / maxTokens;
+        const underOver = 0 < deltaPercent ? 'over' : 'under';
+        coreExports.info(`Progress [${description}]: ${plural(tokens, 'token')} ${Math.abs(deltaPercent).toFixed(1)}% ${underOver} budget`
+            + ` (${plural(issue.body.length, 'body character')} + ${plural(issue.comments.length, 'comment')})`);
+    }
+    logProgress('Initial');
+    // Body can use any space left by comments, with a guaranteed minimum
+    const maxBodyTokens = () => {
+        const { issue, omitted_comments } = result.context;
+        const commentContext = { issue: { ...issue, body: '' }, omitted_comments };
+        const commentTokens = getIssueResult(commentContext, maxTokens).tokens;
+        const minBodyTokens = Math.round(maxTokens * ISSUE_BODY_FRACTION);
+        return Math.max(maxTokens - commentTokens, minBodyTokens);
+    };
+    // Attempt to fit issue body and comments by removing logs and code blocks
+    const truncateAll = (result, opName, op, keepOnFail) => {
+        const originalResult = result;
+        result = fitByCommentsOp(result, opName, op, maxTokens);
+        result = fitByBodyOp(result, opName, op, maxTokens, maxBodyTokens());
+        return result.done || keepOnFail ? result : originalResult;
+    };
+    result = truncateAll(result, 'partial logs', truncateLogsPartial, false);
+    result = truncateAll(result, 'full logs', truncateLogsFull);
+    result = truncateAll(result, 'code blocks', truncateCodeBlocks);
+    result = truncateAll(result, 'links', truncateURLs);
+    logProgress('Stripped logs');
+    // Truncate the issue body text if still too large
+    result = fitByMaxBodyLength(result, maxTokens, maxBodyTokens());
+    logProgress('Truncated body');
+    // Select the comments to squeeze into the context
+    result = fitByOmittingComments(result, maxTokens);
+    logProgress('Selected comments');
+    // Finally, force the truncate comment bodies as necessary to force a fit
+    result = fitByMaxCommentLength(result, maxTokens);
+    logProgress('Truncated comments');
+    // Return the truncated issue
+    return result.value;
+}
+// Tokenisation result for an issue
+function getIssueResult(context, maxTokens) {
+    const value = makeResult(context);
+    return getTokensResult(() => ({ value, context }), maxTokens);
+}
+// Attempt to fit the body by applying a supplied truncation
+function fitByBodyOp(result, opName, op, maxTokens, maxBodyTokens) {
+    const { issue, omitted_comments } = result.context;
+    if (result.done)
+        return result;
+    // Fit the issue body in isolation (0 = truncate, 1 = original)
+    const maker = (param) => {
+        const body = param ? issue.body : op(issue.body);
+        const context = { issue: { ...issue, body }, omitted_comments };
+        return { value: body, context };
+    };
+    const bodyResult = fitTokens(maker, maxBodyTokens, 0, 1);
+    if (bodyResult.param === 0)
+        coreExports.info(`Truncated ${opName} body`);
+    // Construct the issue level result (the only use of maxTokens)
+    return getIssueResult(bodyResult.context, maxTokens);
+}
+// Attempt to fit the issue by applying a supplied truncation to some comments
+function fitByCommentsOp(result, opName, op, maxTokens) {
+    const { issue, omitted_comments } = result.context;
+    // Truncated versions of all comments
+    const truncatedComments = issue.comments.map(c => ({ ...c, body: op(c.body) }));
+    // The parameter is the negated number of comments to truncate
+    // (so that smaller parameter values reduce the token count)
+    const maker = (param) => {
+        const comments = truncatedComments.slice(0, -param).concat(issue.comments.slice(-param));
+        const context = { issue: { ...issue, comments }, omitted_comments };
+        return { value: makeResult(context), context };
+    };
+    // Select the parameter value that best fits the token budget
+    result = fitTokens(maker, maxTokens, -issue.comments.length, 0);
+    const count = result.context.issue.comments.reduce((acc, c, index) => c.body === issue.comments[index]?.body ? acc : acc + 1, 0);
+    if (count)
+        coreExports.info(`Truncated ${opName} ${count} of ${plural(-result.param, 'comment')}`);
+    return result;
+}
+// Attempt to fit the issue by omitting some comments
+function fitByOmittingComments(result, maxTokens) {
+    const { issue, omitted_comments } = result.context;
+    const maxComments = issue.comments.length;
+    // Identify last block of comments by a project maintainer
+    const lastMaintainerIndex = issue.comments.findLastIndex(c => c.role === 'Maintainer');
+    const firstMaintainerIndex = issue.comments.slice(0, lastMaintainerIndex).findLastIndex(c => c.role !== 'Maintainer') + 1;
+    const maintainerCommentTail = lastMaintainerIndex !== -1 ? maxComments - firstMaintainerIndex : 0;
+    // Choose the number of comments to squeeze into the context (include one non-maintainer comment)
+    const priorityComments = Math.max(maintainerCommentTail + 1, MIN_PRIORITY_COMMENTS);
+    const minComments = Math.min(priorityComments, maxComments, MAX_PRIORITY_COMMENTS);
+    // The parameter is the number of comments to keep
+    const maker = (param) => {
+        const comments = issue.comments.slice(-param);
+        const context = { issue: { ...issue, comments }, omitted_comments: omitted_comments + param };
+        return { value: makeResult(context), context };
+    };
+    // Select the parameter value that best fits the token budget
+    result = fitTokens(maker, maxTokens, minComments, maxComments);
+    if (result.param < maxComments) {
+        coreExports.info(`Selected ${result.param} of ${plural(maxComments, 'comment')}`);
+        coreExports.warning(`Discarded ${plural(result.context.omitted_comments, 'oldest comment')} to fit context`);
+    }
+    return result;
+}
+// Attempt to fit the body by applying a variable truncation
+function fitByMaxBodyLength(result, maxTokens, maxBodyTokens) {
+    const { issue, omitted_comments } = result.context;
+    if (result.done)
+        return result;
+    // Fit the issue body in isolation (parameter is length in characters)
+    const maker = (param) => {
+        const body = truncateText(issue.body, param);
+        const context = { issue: { ...issue, body }, omitted_comments };
+        return { value: body, context };
+    };
+    const bodyResult = fitTokens(maker, maxBodyTokens, 0, issue.body.length);
+    if (bodyResult.param < issue.body.length) {
+        coreExports.info(`Truncated body from ${issue.body.length} to ${plural(bodyResult.param, 'character')}`);
+    }
+    // Construct the issue level result (the only use of maxTokens)
+    return getIssueResult(bodyResult.context, maxTokens);
+}
+// Attempt to fit the issue by applying a variable truncation to all comments
+function fitByMaxCommentLength(result, maxTokens) {
+    const { issue, omitted_comments } = result.context;
+    const maxCommentChars = Math.max(...issue.comments.map(c => c.body.length), 0);
+    // The parameter is the maximum number of characters to allow per comment
+    const maker = (param) => {
+        const comments = issue.comments.map(c => ({ ...c, body: truncateText(c.body, param) }));
+        const context = { issue: { ...issue, comments }, omitted_comments };
+        return { value: makeResult(context), context };
+    };
+    // Select the parameter value that best fits the token budget
+    result = fitTokens(maker, maxTokens, 0, maxCommentChars);
+    const count = result.context.issue.comments.reduce((acc, c, index) => c.body === issue.comments[index]?.body ? acc : acc + 1, 0);
+    if (count)
+        coreExports.info(`Truncated ${plural(count, 'comment')} from ${maxCommentChars} to ${plural(result.param, 'character')} each`);
+    return result;
+}
+
+// GitHub action
+// Copyright © 2026 Alexander Thoukydides
 // Script entry point
 async function run(github) {
     // Action inputs
@@ -32236,19 +32299,15 @@ async function run(github) {
     if (input_tokens < input_prompt_tokens)
         throw new Error('input_tokens < input_prompt_tokens');
     const maxIssueTokens = input_tokens - input_prompt_tokens;
-    const maxIssueChars = maxIssueTokens * CHARS_PER_TOKEN;
-    coreExports.info(`Budget for issue context: ${maxIssueChars} characters = ${maxIssueTokens} tokens`
-        + ` (${input_tokens} tokens - ${input_prompt_tokens} prompt tokens)`);
+    coreExports.info(`Budget for issue context: ${plural(maxIssueTokens, 'token')}`
+        + ` (${plural(input_tokens, 'token')} - ${plural(input_prompt_tokens, 'prompt token')})`);
     // Truncate the issue to fit within the available input context
-    const [truncatedIssue, omittedComments] = truncateIssue(cleanedIssue, maxIssueChars);
-    // Try calculating the actual token count
-    const finalTokens = jsonTokens(makeResult(truncatedIssue, omittedComments));
-    coreExports.info(`Final size ${plural(finalTokens, 'token')}`);
+    const result = truncateIssue(cleanedIssue, maxIssueTokens);
     // Provide useful fields as discrete outputs and return the context
     coreExports.setOutput('issue_title', restIssue.title);
     coreExports.setOutput('issue_url', restIssue.url);
     coreExports.setOutput('issue_user', restIssue.author);
-    return makeResult(truncatedIssue, omittedComments);
+    return result;
 }
 
 export { run as default };

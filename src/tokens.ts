@@ -4,24 +4,17 @@
 import { Tiktoken } from 'js-tiktoken/lite';
 import ranks from 'js-tiktoken/ranks/o200k_base';
 
-// 'o200k_base' encoding is used by the following model families:
-//   - o1
-//   - o3
-//   - o4-mini
-//   - gpt-5
-//   - gpt-4.1
-//   - gpt-4o
-
-// Generate an object based on an integral parameter
+// Generate value and client context based on an integral parameter
 // (size generally increases with parameter value)
-export type TokenObjectMaker<T> = (param: number) => T;
+export type TokenMaker<T, U> = (param: number) => { value: T, context: U };
 
 // Result of a token optimisation
-export interface TokenFitResult<T> {
-    param:  number;     // The optimised integral parameter
-    value:  T;          // The optimised value, i.e. the result of maker(param)
-    tokens: number;     // The number of tokens in value
-    done:   boolean;    // Was the token limit satisfied
+export interface TokenFitResult<T, U> {
+    param:      number;     // The optimised integral parameter
+    value:      T;          // maker(param).value
+    context:    U;          // maker(param).context
+    tokens:     number;     // The number of tokens in value
+    done:       boolean;    // Was the token limit satisfied
 }
 
 // Initialise the encoder once
@@ -40,28 +33,32 @@ export function jsonTokens(value: unknown): number {
 
 // Find the largest integral parameter that fits within a token count limit
 // (might not be optimal if size changes non-monotonically)
-export function fitTokens<T>(
-    maker:      TokenObjectMaker<T>,
+export function fitTokens<T, U>(
+    maker:      TokenMaker<T, U>,
     maxTokens:  number,
     minParam:   number,
     maxParam:   number
-): TokenFitResult<T> {
-    // Assess a particular parameter value
-    const getResult = (param: number): TokenFitResult<T> => {
-        const value     = maker(param);
-        const tokens    = jsonTokens(value);
-        const done      = tokens <= maxTokens;
-        return { param, value, tokens, done };
-    };
-
+): TokenFitResult<T, U> {
     // Perform a binary search to find the largest parameter that fits
     while (minParam < maxParam) {
         const testParam = Math.ceil((minParam + maxParam) / 2);
-        const { done } = getResult(testParam);
+        const { done } = getTokensResult(maker, maxTokens, testParam);
         if (done)   minParam = testParam;
         else        maxParam = testParam - 1;
     }
 
     // Return the best fit
-    return getResult(maxParam);
+    return getTokensResult(maker, maxTokens, maxParam);
+}
+
+// Apply a maker method and assess the resulting token count
+export function getTokensResult<T, U>(
+    maker:      TokenMaker<T, U>,
+    maxTokens:  number,
+    param = 0
+): TokenFitResult<T, U> {
+    const { value, context } = maker(param);
+    const tokens = jsonTokens(value);
+    const done   = tokens <= maxTokens;
+    return { param, value, context, tokens, done };
 }

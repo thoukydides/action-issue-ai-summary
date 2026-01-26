@@ -3,11 +3,11 @@ model: openai/gpt-4.1
 messages:
 
   - role: system
-    content: |
+    content: |-
       You are a helpful assistant
       
   - role: user
-    content: | # markdown
+    content: |- # markdown
       Summarise the following GitHub issue in one paragraph:
 
       ```json

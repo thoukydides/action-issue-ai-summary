@@ -3,6 +3,12 @@
 
 import { Issue, Role } from './get_issue.js';
 
+// A truncated issue
+export interface IssueContext {
+    issue:              Issue,
+    omitted_comments:   number
+};
+
 // A simplified representation of an issue body or comment
 export interface ResultComment {
     author:             string;
@@ -24,12 +30,13 @@ export interface Result extends ResultComment {
 }
 
 // Convert an issue and its comments into a result context
-export function makeResult(issue: Issue, omitted_comments?: number): Result {
+export function makeResult(context: IssueContext): Result {
     // Convert the issue body
-    const { number, created_at, url, comments, ...restIssue } = issue;
+    const { number, created_at, url, comments, ...restIssue } = context.issue;
     const result: Result = { ...restIssue, comments: [] };
 
     // Convert the comments, inserting time gap markers as required
+    let omitted_comments: number | undefined = context.omitted_comments;
     let prev_time = new Date(created_at).getTime();
     for (const comment of comments) {
         const { created_at, url, ...restComment } = comment;
@@ -45,12 +52,6 @@ export function makeResult(issue: Issue, omitted_comments?: number): Result {
     const days_stale = daysBetween(prev_time, Date.now());
     result.comments.push({ days_stale }); // (always include, even if 0)
     return result;
-}
-
-// The size of the result context
-export function getResultChars(issue: Issue, omitted_comments?: number): number {
-    const result = makeResult(issue, omitted_comments);
-    return JSON.stringify(result).length;
 }
 
 // Elapsed days between two millisecond times

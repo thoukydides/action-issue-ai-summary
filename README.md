@@ -28,6 +28,9 @@ Various inputs are defined in the action to configure its operation:
 | `input_prompt_tokens` | The number of input tokens reserved for the prompt template itself (deducted from `input_tokens` when truncating the issue) | `100`
 | `output_tokens` | The maximum number of output tokens for the AI model to generate (only affects truncation of the generated summary; if it is too small, the model may drop sections of the response) | `4000`
 
+> [!CAUTION]
+> The token count is measured using the `o200k_base` encoding. This is suitable for the default prompt's `openai/gpt-4.1` model (and other models in the `o1`, `o3`, `o4-mini`, `gpt-5`, `gpt-4.1`, and `gpt-4o` families). It will give unreliable results for models that use different encodings.
+
 ## Outputs
 
 The action provides the following outputs:
@@ -50,6 +53,8 @@ The following variables are substituted in the `.prompt.yml` template:
 | `{{owner}}` | The user ID of the repo owner
 | `{{release}}` | The tag of the latest non-prerelease, or `'latest release'` if none
 | `{{user}}` | The user ID of the issue's creator
+
+Additional template variables can be specified using the `prompt_vars` input.
 
 ## Usage
 
@@ -80,7 +85,7 @@ jobs:
 ```
 
 > [!TIP]
-> Use [OpenAI Tokenizer](https://platform.openai.com/tokenizer) (or equivalent for other providers' models) to determine `input_prompt_tokens` if a custom `prompt_file` is used.
+> Use [OpenAI Tokenizer](https://platform.openai.com/tokenizer) (or equivalent for other providers' models) to determine `input_prompt_tokens` if a custom `prompt_file` is used. Select the **GPT-5.x & O1/3** option to match the `o200k_base` encoding used by this action.
 
 > [!TIP]
 > If you want to use your own prompt, provide a path relative to the repository root (e.g. `./.github/prompts/my-triage.yml`).
@@ -95,11 +100,11 @@ model: openai/gpt-4.1
 messages:
 
   - role: system
-    content: |
+    content: |-
       You are a helpful assistant
       
   - role: user
-    content: | # markdown
+    content: |- # markdown
       Summarise the following GitHub issue in one paragraph:
 
       ```json
@@ -117,13 +122,13 @@ model: openai/gpt-4.1
 messages:
 
   - role: system
-    content: |
+    content: |-
       You are a triage bot.
       Return a JSON object with fields: status, blocker, next_steps, confidence.
       Use lowercase enum values. Do not include extra keys.
 
   - role: user
-    content: |
+    content: |- # markdown
       Analyse the following GitHub issue:
 
       ```json
