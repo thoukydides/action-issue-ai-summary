@@ -1,9 +1,9 @@
 # `action-issue-ai-summary`
 
-This action uses AI to summarise the body and comments of an issue:
+This action uses Google Gemini to summarise the body and comments of an issue:
 - **Fetch Issue and Comments**: Retrieves the issue body and all comments, excluding bot comments.
 - **Truncate Content**: Intelligently truncates logs, code blocks, and long text to fit the AI model's context limit.
-- **Generate Output**: Uses GitHub Models to generate output using either a default or custom `.prompt.yml` file.
+- **Generate Output**: Uses Google AI Studio to generate output using either a default or custom `.prompt.yml` file.
 
 > [!CAUTION]
 > This action is provided for my own use and published in case it is useful to others. If you rely on it, fork and maintain your own copy. No support or stability guarantees are offered.
@@ -11,9 +11,12 @@ This action uses AI to summarise the body and comments of an issue:
 ## Prerequisites
 
 Before using this workflow, ensure:
-- GitHub Models is enabled for this repository (Settings → Models → Enabled).
-- The workflow has `issues: read`, `contents: read` and `models: read` permissions (either via the default `GITHUB_TOKEN` or a fine-grained token).
-- You understand the [rate limits](https://docs.github.com/en/github-models/use-github-models/prototyping-with-ai-models#rate-limits) for your chosen model and usage tier.
+- The workflow has `issues: read` and `contents: read` permissions (either via the default `GITHUB_TOKEN` or a fine-grained token).
+- You have created a [Gemini API key](https://ai.google.dev/gemini-api/docs/api-key) and placed it in a repository secret (e.g. `GEMINI_API_KEY`).
+- You understand the [rate limits](https://ai.google.dev/gemini-api/docs/rate-limits) for your chosen model and usage tier.
+
+> [!TIP]
+> Google AI Studio Gemini rate limits are per-project. Create multiple projects, each with its own API key, to increase quotas.
 
 ## Inputs
 
@@ -21,15 +24,16 @@ Various inputs are defined in the action to configure its operation:
 
 | Name | Description | Default
 | --- | --- | ---
+| `gemini_api_key`: The Google AI Studio Gemini API key | *required*
 | `issue_number` | The GitHub issue to summarise | *required*
 | `prompt_file` | Path to a custom `.prompt.yml` file containing the AI prompt template | Internal `'default.prompt.yml'`
 | `prompt_vars` | Additional template variables in YAML format to substitute into the AI prompt | `''`
-| `input_tokens` | The maximum number of input tokens that the AI model will accept (used to guide truncation of the issue body and comments to fit the available context) | `8000`
+| `input_tokens` | The maximum number of input tokens that the AI model will accept (used to guide truncation of the issue body and comments to fit the available context) | `50000`
 | `input_prompt_tokens` | The number of input tokens reserved for the prompt template itself (deducted from `input_tokens` when truncating the issue) | `100`
 | `output_tokens` | The maximum number of output tokens for the AI model to generate (only affects truncation of the generated summary; if it is too small, the model may drop sections of the response) | `4000`
 
 > [!CAUTION]
-> The token count is measured using the `o200k_base` encoding. This is suitable for the default prompt's `openai/gpt-4.1` model (and other models in the `o1`, `o3`, `o4-mini`, `gpt-5`, `gpt-4.1`, and `gpt-4o` families). It will give unreliable results for models that use different encodings.
+> The input token count is estimated using the `o200k_base` encoding. This is intended for OpenAI models (in the `o1`, `o3`, `o4-mini`, `gpt-5`, `gpt-4.1`, and `gpt-4o` families). It provides a general guide for Gemini usage but is not precise.
 
 ## Outputs
 
@@ -65,27 +69,34 @@ name: Closed Issue Summary
 permissions:
   issues: read
   contents: read
-  models: read
 
 on:
   issues:
     types: [closed]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number'
+        required: true
+        type: number
 
 jobs:
   closed-issue-summary:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Summarise the issue and its comments
-        uses: thoukydides/action-issue-ai-summary@v1
-        with:
-          issue_number: ${{ github.event.issue.number }}
-          prompt_file: ${{ github.workspace }}/issue-summary.prompt.yml
-          input_prompt_tokens: 100
+    - name: Summarise the issue and its comments
+      uses: thoukydides/action-issue-ai-summary@v1
+      with:
+        gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+        # Use the event issue number for label triggers, or the manual input for workflow_dispatch
+        issue_number: ${{ github.event.issue.number || fromJson(inputs.issue_number) }}
+        prompt_file: ${{ github.workspace }}/issue-summary.prompt.yml
+        input_prompt_tokens: 1000
 ```
 
 > [!TIP]
-> Use [OpenAI Tokenizer](https://platform.openai.com/tokenizer) (or equivalent for other providers' models) to determine `input_prompt_tokens` if a custom `prompt_file` is used. Select the **GPT-5.x & O1/3** option to match the `o200k_base` encoding used by this action.
+> Use the Google AI Studio [Playground](https://aistudio.google.com/prompts/new_chat) to determine `input_prompt_tokens` if a custom `prompt_file` is used. Ensure that the same model is selected as specified by the prompt file.
 
 > [!TIP]
 > If you want to use your own prompt, provide a path relative to the repository root (e.g. `./.github/prompts/my-triage.yml`).
@@ -95,7 +106,7 @@ jobs:
 Example `.prompt.yml` for unstructured output:
 
 ```yaml
-model: openai/gpt-4.1
+model: gemini-3-flash-preview
 
 messages:
 
@@ -117,7 +128,7 @@ messages:
 Example `.prompt.yml` with JSON schema:
 
 ```yaml
-model: openai/gpt-4.1
+model: gemini-3-flash-preview
 
 messages:
 

@@ -6,6 +6,10 @@ branding:
   color: 'blue'
 
 inputs:
+  gemini_api_key:
+    description: The Google AI Studio Gemini API key
+    required: true
+    type: string
   issue_number:
     description: The GitHub issue to summarise
     required: true
@@ -20,7 +24,7 @@ inputs:
   input_tokens:
     description: The maximum number of input tokens that the AI model will accept (used to guide truncation of the issue body and comments to fit the available context)
     type: number
-    default: 8000
+    default: 50000
   input_prompt_tokens:
     description: The number of input tokens reserved for the prompt template itself (deducted from input_tokens when truncating the issue)
     type: number
@@ -83,12 +87,15 @@ runs:
       #uses: actions/ai-inference@v1
       uses: thoukydides/ai-inference-debug@main
       with:
+        endpoint: https://generativelanguage.googleapis.com/v1beta/openai/
+        custom-headers: |
+          Authorization: Bearer ${{ inputs.gemini_api_key }}
         prompt-file:  ${{ inputs.prompt_file || format('{0}/default.prompt.yml', github.action_path) }}
         max-tokens:   ${{ inputs.output_tokens }}
         input: | # yaml
           owner:      ${{ github.repository_owner }}
           user:       ${{ steps.context.outputs.issue_user }}
           release:    ${{ steps.release.outputs.result }}
-          context: |
+          context: >-
             ${{ steps.context.outputs.result }}
           ${{ inputs.prompt_vars }}
