@@ -82,6 +82,12 @@ runs:
               return 'latest release';
           }
 
+    - name: Set repository name
+      id: repo
+      shell: bash
+      run: | # shell
+        echo "repository=$(basename ${{ github.repository }})" >> $GITHUB_OUTPUT
+
     - name: AI inference
       id: ai
       #uses: actions/ai-inference@v1
@@ -94,6 +100,7 @@ runs:
         max-tokens:   ${{ inputs.output_tokens }}
         input: | # yaml
           owner:      ${{ github.repository_owner }}
+          repository: ${{ steps.repo.outputs.repository }}
           user:       ${{ steps.context.outputs.issue_user }}
           release:    ${{ steps.release.outputs.result }}
           context: >-

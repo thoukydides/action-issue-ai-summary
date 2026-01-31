@@ -55,6 +55,7 @@ The following variables are substituted in the `.prompt.yml` template:
 | --- | ---
 | `{{context}}` | The issue body and comments as a minified JSON string (truncated as necessary to fit within the model's input context)
 | `{{owner}}` | The user ID of the repo owner
+| `{{repository}}` | The repository name
 | `{{release}}` | The tag of the latest non-prerelease, or `'latest release'` if none
 | `{{user}}` | The user ID of the issue's creator
 
