@@ -16,7 +16,7 @@ inputs:
     type: number
   include_comments:
     description: Should comments be included in the model's context
-    type: string
+    type: boolean
     default: true
   prompt_file:
     description: Path to a custom .prompt.yml file containing the AI prompt template
