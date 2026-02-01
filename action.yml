@@ -21,6 +21,10 @@ inputs:
     description: Additional template variables in YAML format to substitute into the AI prompt
     type: string
     default: ''
+  prompt_vars_files:
+    description: Additional template variables in YAML format, where the values are file paths
+    type: string
+    default: ''
   input_tokens:
     description: The maximum number of input tokens that the AI model will accept (used to guide truncation of the issue body and comments to fit the available context)
     type: number
@@ -106,3 +110,5 @@ runs:
           context: >-
             ${{ steps.context.outputs.result }}
           ${{ inputs.prompt_vars }}
+        file_input: | # yaml
+          ${{ inputs.prompt_vars_files }}

@@ -28,6 +28,7 @@ Various inputs are defined in the action to configure its operation:
 | `issue_number` | The GitHub issue to summarise | *required*
 | `prompt_file` | Path to a custom `.prompt.yml` file containing the AI prompt template | Internal `'default.prompt.yml'`
 | `prompt_vars` | Additional template variables in YAML format to substitute into the AI prompt | `''`
+| `prompt_vars_files` | Additional template variables in YAML format, where the values are file paths | `''`
 | `input_tokens` | The maximum number of input tokens that the AI model will accept (used to guide truncation of the issue body and comments to fit the available context) | `50000`
 | `input_prompt_tokens` | The number of input tokens reserved for the prompt template itself (deducted from `input_tokens` when truncating the issue) | `100`
 | `output_tokens` | The maximum number of output tokens for the AI model to generate (only affects truncation of the generated summary; if it is too small, the model may drop sections of the response) | `4000`
