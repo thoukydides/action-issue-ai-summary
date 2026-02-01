@@ -12,12 +12,13 @@ import { plural } from './utils.js';
 // Script entry point
 export default async function run(github: InstanceType<typeof GitHub>): Promise<Result> {
     // Action inputs
-    const issue_number          = Number(core.getInput('issue_number',          { required: true }));
-    const input_tokens          = Number(core.getInput('input_tokens',          { required: true }));
-    const input_prompt_tokens   = Number(core.getInput('input_prompt_tokens',   { required: true }));
+    const issue_number          = Number(core.getInput       ('issue_number',           { required: true }));
+    const include_comments      =        core.getBooleanInput('include_comments',       { required: true });
+    const input_tokens          = Number(core.getInput       ('input_tokens',           { required: true }));
+    const input_prompt_tokens   = Number(core.getInput       ('input_prompt_tokens',    { required: true }));
 
     // Retrieve and filter the issue with its comments
-    const restIssue = await getIssue(github, issue_number);
+    const restIssue = await getIssue(github, issue_number, include_comments);
     const cleanedIssue = cleanIssue(restIssue);
 
     // Input context available for the issue

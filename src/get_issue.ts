@@ -34,10 +34,15 @@ export interface Issue extends Comment {
 }
 
 // Retrieve an issue with all of its comments, and simplify its representation
-export async function getIssue(github: InstanceType<typeof GitHub>, issue_number: number): Promise<Issue> {
+export async function getIssue(
+    github:             InstanceType<typeof GitHub>,
+    issue_number:       number,
+    include_comments:   boolean
+): Promise<Issue> {
     // Retrieve the issue and its comments
     const issue     = (await github.rest.issues.get({ ...context.repo, issue_number })).data;
-    const comments  = await github.paginate(github.rest.issues.listComments, { ...context.repo, issue_number });
+    const comments  = include_comments
+        ? await github.paginate(github.rest.issues.listComments, { ...context.repo, issue_number }) : [];
     core.info(`Retrieved issue #${issue_number}: "${issue.title}" (with ${plural(comments.length, 'comment')})`);
     core.debug(`REST API Issue:\n${JSON.stringify(issue, null, 4)}`);
     core.debug(`REST API Comments:\n${JSON.stringify(comments, null, 4)}`);

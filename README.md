@@ -26,6 +26,7 @@ Various inputs are defined in the action to configure its operation:
 | --- | --- | ---
 | `gemini_api_key`: The Google AI Studio Gemini API key | *required*
 | `issue_number` | The GitHub issue to summarise | *required*
+| `include_comments` | Should comments be included in the model's context | `true`
 | `prompt_file` | Path to a custom `.prompt.yml` file containing the AI prompt template | Internal `'default.prompt.yml'`
 | `prompt_vars` | Additional template variables in YAML format to substitute into the AI prompt | `''`
 | `prompt_vars_files` | Additional template variables in YAML format, where the values are file paths | `''`

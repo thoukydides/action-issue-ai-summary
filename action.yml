@@ -14,6 +14,10 @@ inputs:
     description: The GitHub issue to summarise
     required: true
     type: number
+  include_comments:
+    description: Should comments be included in the model's context
+    type: string
+    default: true
   prompt_file:
     description: Path to a custom .prompt.yml file containing the AI prompt template
     type: string
@@ -64,6 +68,7 @@ runs:
       uses: actions/github-script@v7
       env:
         INPUT_ISSUE_NUMBER:         ${{ inputs.issue_number }}
+        INPUT_INCLUDE_COMMENTS:     ${{ inputs.include_comments }}
         INPUT_INPUT_TOKENS:         ${{ inputs.input_tokens }}
         INPUT_INPUT_PROMPT_TOKENS:  ${{ inputs.input_prompt_tokens }}
       with:

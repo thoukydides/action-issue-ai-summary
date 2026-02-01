@@ -31553,10 +31553,11 @@ function plural(count, noun, showCount = true) {
 // GitHub action
 // Copyright © 2026 Alexander Thoukydides
 // Retrieve an issue with all of its comments, and simplify its representation
-async function getIssue(github, issue_number) {
+async function getIssue(github, issue_number, include_comments) {
     // Retrieve the issue and its comments
     const issue = (await github.rest.issues.get({ ...githubExports.context.repo, issue_number })).data;
-    const comments = await github.paginate(github.rest.issues.listComments, { ...githubExports.context.repo, issue_number });
+    const comments = include_comments
+        ? await github.paginate(github.rest.issues.listComments, { ...githubExports.context.repo, issue_number }) : [];
     coreExports.info(`Retrieved issue #${issue_number}: "${issue.title}" (with ${plural(comments.length, 'comment')})`);
     coreExports.debug(`REST API Issue:\n${JSON.stringify(issue, null, 4)}`);
     coreExports.debug(`REST API Comments:\n${JSON.stringify(comments, null, 4)}`);
@@ -32290,10 +32291,11 @@ function fitByMaxCommentLength(result, maxTokens) {
 async function run(github) {
     // Action inputs
     const issue_number = Number(coreExports.getInput('issue_number', { required: true }));
+    const include_comments = coreExports.getBooleanInput('include_comments', { required: true });
     const input_tokens = Number(coreExports.getInput('input_tokens', { required: true }));
     const input_prompt_tokens = Number(coreExports.getInput('input_prompt_tokens', { required: true }));
     // Retrieve and filter the issue with its comments
-    const restIssue = await getIssue(github, issue_number);
+    const restIssue = await getIssue(github, issue_number, include_comments);
     const cleanedIssue = cleanIssue(restIssue);
     // Input context available for the issue
     if (input_tokens < input_prompt_tokens)
