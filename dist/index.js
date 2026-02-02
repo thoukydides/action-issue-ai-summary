@@ -31601,6 +31601,8 @@ function authorAssociationToRole(comment) {
         MANNEQUIN: 'User',
         NONE: 'User'
     };
+    if (comment.user?.login.endsWith('[bot]'))
+        return 'Bot';
     return TYPE_TO_ROLE[comment.user?.type ?? '']
         ?? ASSOCIATION_TO_ROLE[comment.author_association]
         ?? 'Unknown';

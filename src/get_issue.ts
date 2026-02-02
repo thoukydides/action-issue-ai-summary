@@ -90,6 +90,7 @@ function authorAssociationToRole(comment: RestIssue | RestComment): Role {
         MANNEQUIN:              'User',
         NONE:                   'User'
     } satisfies Record<AuthorAssociation, Role>;
+    if (comment.user?.login.endsWith('[bot]')) return 'Bot';
     return TYPE_TO_ROLE[comment.user?.type ?? '']
         ?? ASSOCIATION_TO_ROLE[comment.author_association]
         ?? 'Unknown';
