@@ -24,7 +24,8 @@ Various inputs are defined in the action to configure its operation:
 
 | Name | Description | Default
 | --- | --- | ---
-| `gemini_api_key`: The Google AI Studio Gemini API key | *required*
+| `gemini_api_key` | The Google AI Studio Gemini API key | *required*
+| `repository` | The repository to check in the format `'owner/repo'` | `${{ github.repository }}`
 | `issue_number` | The GitHub issue to summarise | *required*
 | `include_comments` | Should comments be included in the model's context | `true`
 | `prompt_file` | Path to a custom `.prompt.yml` file containing the AI prompt template | Internal `'default.prompt.yml'`

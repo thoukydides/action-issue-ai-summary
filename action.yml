@@ -10,6 +10,10 @@ inputs:
     description: The Google AI Studio Gemini API key
     required: true
     type: string
+  repository:
+    description: The repository to check in the format 'owner/repo'
+    type: string
+    default: ${{ github.repository }}
   issue_number:
     description: The GitHub issue to summarise
     required: true
@@ -67,6 +71,7 @@ runs:
       id: context
       uses: actions/github-script@v7
       env:
+        INPUT_REPOSITORY:           ${{ inputs.repository }}
         INPUT_ISSUE_NUMBER:         ${{ inputs.issue_number }}
         INPUT_INCLUDE_COMMENTS:     ${{ inputs.include_comments }}
         INPUT_INPUT_TOKENS:         ${{ inputs.input_tokens }}
@@ -75,27 +80,6 @@ runs:
         script: | # javascript
           const { default: fn } = await import('${{ github.action_path }}/dist/index.js');
           return await fn(github);
-
-    - name: Check the most recent release
-      id: release
-      uses: actions/github-script@v7
-      with:
-        result-encoding: string
-        script: | # javascript
-          try {
-              const release = (await github.rest.repos.getLatestRelease(context.repo)).data;
-              core.info(`Latest release: ${release.tag_name}: ${release.html_url}`);
-              return release.tag_name;
-          } catch (err) {
-              core.error(`Failed to retrieve latest release: ${err.message}`);
-              return 'latest release';
-          }
-
-    - name: Set repository name
-      id: repo
-      shell: bash
-      run: | # shell
-        echo "repository=$(basename ${{ github.repository }})" >> $GITHUB_OUTPUT
 
     - name: AI inference
       id: ai
@@ -108,10 +92,10 @@ runs:
         prompt-file:  ${{ inputs.prompt_file || format('{0}/default.prompt.yml', github.action_path) }}
         max-tokens:   ${{ inputs.output_tokens }}
         input: | # yaml
-          owner:      ${{ github.repository_owner }}
-          repository: ${{ steps.repo.outputs.repository }}
+          owner:      ${{ steps.context.outputs.owner }}
+          repository: ${{ steps.context.outputs.repo }}
           user:       ${{ steps.context.outputs.issue_user }}
-          release:    ${{ steps.release.outputs.result }}
+          release:    ${{ steps.context.outputs.release }}
           context: >-
             ${{ steps.context.outputs.result }}
           ${{ inputs.prompt_vars }}
