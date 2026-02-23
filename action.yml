@@ -44,7 +44,7 @@ inputs:
   output_tokens:
     description: The maximum number of output tokens for the AI model to generate (only affects truncation of the generated summary; if it is too small, the model may drop sections of the response)
     type: number
-    default: 4000
+    default: 50000
 
 outputs:
   response:

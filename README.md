@@ -33,7 +33,7 @@ Various inputs are defined in the action to configure its operation:
 | `prompt_vars_files` | Additional template variables in YAML format, where the values are file paths | `''`
 | `input_tokens` | The maximum number of input tokens that the AI model will accept (used to guide truncation of the issue body and comments to fit the available context) | `50000`
 | `input_prompt_tokens` | The number of input tokens reserved for the prompt template itself (deducted from `input_tokens` when truncating the issue) | `100`
-| `output_tokens` | The maximum number of output tokens for the AI model to generate (only affects truncation of the generated summary; if it is too small, the model may drop sections of the response) | `4000`
+| `output_tokens` | The maximum number of output tokens for the AI model to generate (only affects truncation of the generated summary; if it is too small, the model may drop sections of the response) | `50000`
 
 > [!CAUTION]
 > The input token count is estimated using the `o200k_base` encoding. This is intended for OpenAI models (in the `o1`, `o3`, `o4-mini`, `gpt-5`, `gpt-4.1`, and `gpt-4o` families). It provides a general guide for Gemini usage but is not precise.
