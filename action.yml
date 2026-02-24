@@ -44,7 +44,7 @@ inputs:
   output_tokens:
     description: The maximum number of output tokens for the AI model to generate (only affects truncation of the generated summary; if it is too small, the model may drop sections of the response)
     type: number
-    default: 50000
+    default: 65536
 
 outputs:
   response:
@@ -83,14 +83,11 @@ runs:
 
     - name: AI inference
       id: ai
-      #uses: actions/ai-inference@v1
-      uses: thoukydides/ai-inference-debug@main
+      uses: thoukydides/action-gemini-ai-inference@v1
       with:
-        endpoint: https://generativelanguage.googleapis.com/v1beta/openai/
-        custom-headers: |
-          Authorization: Bearer ${{ inputs.gemini_api_key }}
-        prompt-file:  ${{ inputs.prompt_file || format('{0}/default.prompt.yml', github.action_path) }}
-        max-tokens:   ${{ inputs.output_tokens }}
+        gemini_api_key: ${{ inputs.gemini_api_key }}
+        prompt_file:  ${{ inputs.prompt_file || format('{0}/default.prompt.yml', github.action_path) }}
+        max_tokens:   ${{ inputs.output_tokens }}
         input: | # yaml
           owner:      ${{ steps.context.outputs.owner }}
           repository: ${{ steps.context.outputs.repo }}
