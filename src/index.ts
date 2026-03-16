@@ -1,7 +1,7 @@
 // GitHub action
 // Copyright © 2026 Alexander Thoukydides
 
-import { GitHub } from '@actions/github/lib/utils.js';
+import { GitHub } from '@actions/github/lib/utils';
 import * as core from '@actions/core';
 import { getIssue } from './get_issue.js';
 import { cleanIssue } from './clean_issue.js';
